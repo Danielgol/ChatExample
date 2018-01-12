@@ -1,0 +1,131 @@
+<html>
+<head>
+  <title>
+    IO Chat
+  </title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+	<style>
+
+		form {
+		    position: absolute;
+		    top: 90%;
+		    left: 50%;
+		    border: 0px;
+		    transform: translate(-50%, -90%);
+		}
+
+		table.t1 {
+			position: absolute;
+		    top: 5%;
+		    left: 43%;
+		    border: 0px;
+		}
+
+		table.t2 {
+			position: absolute;
+		    top: 5%;
+		    left: 10%;
+		    border: 2px solid black;
+		    border-radius: 2;
+		    background-color: #DCDCDC;
+		}
+
+		table {
+			display: none;
+		}
+
+	</style>
+
+	<form id="user" >
+		<tr>
+			<td>
+				<input type="text" name="name" placeholder="Digite seu Nome">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<input type="button" value=">" onclick="saveName();">
+			</td>
+		</tr>
+	</form>
+
+	<table class="t1" id="chat"></table>
+
+	<table class="t2" id="users">
+		<tr><td>Usuários On-line</td></tr>	
+	</table>
+
+	<form style="display: none;" id="msg">
+		<tr>
+			<td>
+				<input style="width: 250;" type="text" name="message" placeholder="Digite sua Mensagem">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<input type="button" value=">" onclick="sendMessage();">
+			</td>
+		</tr>
+	</form>
+
+	<script>
+		
+		var socket;
+
+		var userName;
+
+		var table = document.getElementById('chat');
+		var usersTable = document.getElementById('users');
+
+		function sendMessage(){
+			var data = {
+				userId: socket.id,
+				userName: userName,
+				message: document.getElementById("msg").message.value
+			}
+			socket.emit('send message', data);
+			document.getElementById("msg").message.value = "";
+		}
+
+		function connect(){
+			socket = io.connect();
+		}
+
+		function saveName(){
+			userName = document.getElementById("user").name.value;
+			socket.emit('new user', {userId: socket.id, userName: userName});
+			document.getElementById("user").style.display = "none";
+			document.getElementById("msg").style.display = "inline";
+			document.getElementById("chat").style.display = "inline";
+			document.getElementById("users").style.display = "inline";
+		}
+
+		connect();
+
+		socket.on('new message', function(data){
+			var row = table.insertRow(table.rows.length);
+			var cell = row.insertCell(0);
+			var cell2 = row.insertCell(1);
+			if(""+socket.id === ""+data.userId){
+				cell2.innerHTML = ""+data.message;
+			}else{
+				cell.innerHTML = data.userName+": "+data.message;
+			}
+		});
+
+		socket.on('list users', function(data){
+			var html = "<tr><td>Usuários On-line</td></tr>";
+			for(i=0; i<data.users.length; i++){
+				if(data.users[i].userId != socket.id){
+					html += "<tr><td>"+data.users[i].userName+"</td></tr>";
+				}
+			}
+			document.getElementById('users').innerHTML = html;
+		});
+
+	</script>
+</body>
+</html>
